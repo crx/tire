@@ -75,10 +75,12 @@ module Tire
           self.class.elasticsearch_index
         end
 
+        def remove_from_index
+          index.remove document_type, self
+        end
+
         def update_elastic_search_index
-          if destroyed?
-            index.remove document_type, self
-          else
+          if persisted?
             response  = index.store  document_type, self
             self.id ||= response['_id'] if self.respond_to?(:id=)
             self

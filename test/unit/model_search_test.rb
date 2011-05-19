@@ -193,7 +193,7 @@ module Tire
 
         should "fire :after_destroy callbacks" do
           @model = ActiveModelArticleWithCallbacks.new
-          @model.expects(:update_elastic_search_index)
+          @model.expects(:remove_from_index)
 
           @model.destroy
         end

@@ -51,6 +51,7 @@ module Tire
 
         should "not execute any callbacks" do
           ModelOne.any_instance.expects(:update_elastic_search_index).never
+          ModelOne.any_instance.expects(:remove_from_index).never
 
           ModelOne.new.save
           ModelOne.new.destroy
@@ -61,7 +62,8 @@ module Tire
       context "Model with ActiveModel callbacks and implemented destroyed? method" do
 
         should "execute the callbacks" do
-          ModelTwo.any_instance.expects(:update_elastic_search_index).twice
+          ModelTwo.any_instance.expects(:update_elastic_search_index).once
+          ModelTwo.any_instance.expects(:remove_from_index).once
 
           ModelTwo.new.save
           ModelTwo.new.destroy
@@ -76,7 +78,8 @@ module Tire
         end
 
         should "execute the callbacks" do
-          ModelThree.any_instance.expects(:update_elastic_search_index).twice
+          ModelThree.any_instance.expects(:update_elastic_search_index).once
+          ModelThree.any_instance.expects(:remove_from_index).once
 
           ModelThree.new.save
           ModelThree.new.destroy
