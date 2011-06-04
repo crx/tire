@@ -1,9 +1,14 @@
 require 'rubygems'
-require 'test/unit'
-require 'shoulda'
-require 'mocha'
-require 'turn' unless ENV["TM_FILEPATH"]
+
 require 'pathname'
+require 'test/unit'
+
+require 'yajl/json_gem'
+require 'sqlite3'
+
+require 'shoulda'
+require 'turn' unless ENV["TM_FILEPATH"]
+require 'mocha'
 
 require 'tire'
 

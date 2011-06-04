@@ -100,7 +100,7 @@ module Tire
               _score
             end
           end
-          hash = JSON.load( s.to_json )
+          hash = MultiJson.decode( s.to_json )
           assert_equal [{'title' => 'desc'}, '_score'], hash['sort']
         end
         
@@ -182,7 +182,7 @@ module Tire
             size 5
             from 3
           end
-          hash = JSON.load( s.to_json )
+          hash = MultiJson.decode( s.to_json )
           assert_equal 5, hash['size']
           assert_equal 3, hash['from']
         end
@@ -213,8 +213,44 @@ module Tire
           s = Search::Search.new('index') do
             fields :title
           end
-          hash = JSON.load( s.to_json )
+          hash = MultiJson.decode( s.to_json )
           assert_equal 'title', hash['fields']
+        end
+
+      end
+
+      context "boolean queries" do
+
+        should "wrap other queries" do
+          # TODO: Try to get rid of the `boolean` method
+          #
+          # TODO: Try to get rid of multiple `should`, `must`, invocations, and wrap queries like this:
+          #       boolean do
+          #         should do
+          #           string 'foo'
+          #           string 'bar'
+          #         end
+          #       end
+          s = Search::Search.new('index') do
+            query do
+              boolean do
+                should { string 'foo' }
+                should { string 'moo' }
+                must   { string 'title:bar' }
+                must   { terms  :tags, ['baz']  }
+              end
+            end
+          end
+
+          hash  = MultiJson.decode(s.to_json)
+          query = hash['query']['bool']
+          # p hash
+
+          assert_equal 2, query['should'].size
+          assert_equal 2, query['must'].size
+
+          assert_equal( { 'query_string' => { 'query' => 'foo' } }, query['should'].first)
+          assert_equal( { 'terms' => { 'tags' => ['baz'] } }, query['must'].last)
         end
 
       end

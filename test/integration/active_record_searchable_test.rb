@@ -7,9 +7,7 @@ module Tire
 
     def setup
       super
-      File.delete fixtures_path.join('articles.db') rescue nil
-
-      ActiveRecord::Base.establish_connection( :adapter => 'sqlite3', :database => fixtures_path.join('articles.db') )
+      ActiveRecord::Base.establish_connection( :adapter => 'sqlite3', :database => ":memory:" )
 
       ActiveRecord::Migration.verbose = false
       ActiveRecord::Schema.define(:version => 1) do
@@ -67,7 +65,7 @@ module Tire
 
         a.index.refresh
         results = ActiveRecordArticle.search 'test'
-        
+      
         assert_equal 0, results.count
       end
 

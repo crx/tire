@@ -27,17 +27,17 @@ module Tire
 
     def create(options={})
       @options = options
-      @response = Configuration.client.post "#{Configuration.url}/#{@name}", Yajl::Encoder.encode(options)
+      @response = Configuration.client.post "#{Configuration.url}/#{@name}", MultiJson.encode(options)
     rescue Exception => error
       false
     ensure
-      curl = %Q|curl -X POST "#{Configuration.url}/#{@name}" -d '#{Yajl::Encoder.encode(options, :pretty => true)}'|
+      curl = %Q|curl -X POST "#{Configuration.url}/#{@name}" -d '#{MultiJson.encode(options)}'|
       logged(error, 'CREATE', curl)
     end
 
     def mapping
       @response = Configuration.client.get("#{Configuration.url}/#{@name}/_mapping")
-      JSON.parse(@response.body)[@name]
+      MultiJson.decode(@response.body)[@name]
     end
 
     def store(*args)
@@ -65,7 +65,7 @@ module Tire
       url = id ? "#{Configuration.url}/#{@name}/#{type}/#{id}" : "#{Configuration.url}/#{@name}/#{type}/"
 
       @response = Configuration.client.post url, document
-      JSON.parse(@response.body)
+      MultiJson.decode(@response.body)
 
     rescue Exception => error
       raise
@@ -163,17 +163,17 @@ module Tire
       $VERBOSE = old_verbose
 
       result = Configuration.client.delete "#{Configuration.url}/#{@name}/#{type}/#{id}"
-      JSON.parse(result) if result
+      MultiJson.decode(result) if result
     end
 
     def retrieve(type, id)
       @response = Configuration.client.get "#{Configuration.url}/#{@name}/#{type}/#{id}"
-      h = JSON.parse(@response.body)
+      h = MultiJson.decode(@response.body)
       if Configuration.wrapper == Hash then h
       else
         document = {}
         document = h['_source'] ? document.update( h['_source'] ) : document.update( h['fields'] )
-        document.update('id' => h['_id'], '_version' => h['_version'])
+        document.update('id' => h['_id'], '_type' => h['_type'], '_index' => h['_index'], '_version' => h['_version'])
         Configuration.wrapper.new(document)
       end
     end
@@ -187,6 +187,28 @@ module Tire
       logged(error, '_refresh', curl)
     end
 
+    def open(options={})
+      # TODO: Remove the duplication in the execute > rescue > ensure chain
+      @response = Configuration.client.post "#{Configuration.url}/#{@name}/_open", MultiJson.encode(options)
+      MultiJson.decode(@response.body)['ok']
+    rescue Exception => error
+      raise
+    ensure
+      curl = %Q|curl -X POST "#{Configuration.url}/#{@name}/open"|
+      logged(error, '_open', curl)
+    end
+
+    def close(options={})
+      # TODO: Remove the duplication in the execute > rescue > ensure chain
+      @response = Configuration.client.post "#{Configuration.url}/#{@name}/_close", MultiJson.encode(options)
+      MultiJson.decode(@response.body)['ok']
+    rescue Exception => error
+      raise
+    ensure
+      curl = %Q|curl -X POST "#{Configuration.url}/#{@name}/_close"|
+      logged(error, '_close', curl)
+    end
+
     def logged(error=nil, endpoint='/', curl='')
       if Configuration.logger
 
@@ -196,7 +218,7 @@ module Tire
 
         if Configuration.logger.level.to_s == 'debug'
           # FIXME: Depends on RestClient implementation
-          body = @response ? Yajl::Encoder.encode(@response.body, :pretty => true) : error.http_body rescue ''
+          body = @response ? MultiJson.encode(@response.body, :pretty => true) : error.http_body rescue ''
         else
           body = ''
         end
