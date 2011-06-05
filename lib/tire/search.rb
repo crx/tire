@@ -22,7 +22,7 @@ module Tire
       end
 
       def sort(&block)
-        @sort = Sort.new(&block)
+        @sort = Sort.new(&block).to_ary
         self
       end
 
@@ -91,7 +91,7 @@ module Tire
         request.update( { :size => @size } )       if @size
         request.update( { :from => @from } )       if @from
         request.update( { :fields => @fields } )   if @fields
-        MultiJson.encode(request)
+        request.to_json
       end
 
       def logged(error=nil)
